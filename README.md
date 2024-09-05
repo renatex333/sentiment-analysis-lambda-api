@@ -39,7 +39,7 @@ Having [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/gett
 aws configure --profile mlops
 ```
 
-To set it as deafult profile:
+To set it as default profile:
 
 Linux:
 ```bash
@@ -67,7 +67,7 @@ python src/assign_layer.py
 python src/create_api_gateway.py
 ```
 
-### Test deployed instances
+### Test
 
 To test the deployed instances, run the following command:
 
