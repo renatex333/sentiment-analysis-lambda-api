@@ -1,4 +1,4 @@
-name: Automated Tests
+name: Automated Tests and Deployment
 on:
   push:
     branches:
@@ -21,3 +21,46 @@ jobs:
 
       - name: Run tests
         run: pytest
+
+  deploy-to-aws:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_LAMBDA_ROLE_ARN: ${{ secrets.AWS_LAMBDA_ROLE_ARN }}
+      AWS_LAMBDA_FUNCTION_NAME: ${{ secrets.AWS_LAMBDA_FUNCTION_NAME }}
+      AWS_LAYER_NAME: ${{ secrets.AWS_LAYER_NAME }}
+      AWS_API_GATEWAY_NAME: ${{ secrets.AWS_API_GATEWAY_NAME }}
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Zip Python file
+        run: |
+          zip -j data/polarity.zip src/polarity.py
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r src/deploy/requirements_deploy.txt
+
+      - name: Run function deploy file
+        run: python src/deploy/create_function.py data/polarity.zip get_polarity update
+      
+      - name: Run layer deploy file
+        run: python src/deploy/create_layer.py data/polarity_layer_package.zip update
+      
+      - name: Assign layer to function
+        run: python src/deploy/assign_layer.py
+      
+      - name: Deploy API Gateway
+        run: python src/deploy/create_api_gateway.py update
+      
+      - name: Run tests to check deployment
+        run: pytest --local
