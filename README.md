@@ -1,80 +1,102 @@
-# Lambda Function for Sentment Analysis
+# Lambda Function for Sentiment Analysis
 
-Welcome to this ML project!
+Welcome to this machine learning project! This project involves creating an AWS Lambda function that uses the `textblob` library to analyze and return the polarity (sentiment) of a given text. To improve functionality and streamline dependency management, Lambda Layers are used.
 
-This project involves creating an AWS Lambda function that utilizes the `textblob` library to analyze and return the polarity of a given text. To enhance the project's functionality and manage dependencies more efficiently, Lambda Layers will be utilized.
+## Why Use Lambda Layers?
 
-The main advantages of using Lambda layers are:
+- **Reduce Deployment Package Size:** Instead of packaging function dependencies directly with your Lambda function, you can isolate them into reusable layers. This keeps your deployment packages smaller and more organized.
 
-- **Reduce the size of deployment packages:** Rather than packaging function dependencies directly with your function code, you can isolate dependencies into reusable layers. This keeps deployment packages small and organized.
+- **Separate Logic from Dependencies:** Layers allow you to separate the core logic of your function from its dependencies. This enables you to update dependencies without touching the function code, maintaining clean and lightweight deployments.
 
-- **Separate core function logic from dependencies:** Using layers allows function logic and dependencies to evolve separately. Layers facilitate independent management, where dependencies can be revised without touching the function code. This allows deployment packages for your functions to focus solely on application logic without the bloat of bundled dependencies.
+- **Share Dependencies Across Functions:** By defining reusable layers, multiple functions can share the same dependencies. This eliminates the need to bundle dependencies with every function, simplifying maintenance.
 
-- **Share dependencies across multiple functions:** By building dependencies into layers, those components can then be associated with multiple functions simultaneously. Layers are reusable, so once a layer is established, any function configuration can reference and inherit its dependencies, rather than requiring redundant inclusion in each deployment package.
-
-For more information on Lambda layers, refer to the official AWS documentation: [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html). 
+For more details, see the [AWS Lambda Layers documentation](https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html).
 
 ## Installing Dependencies
 
-To install the project dependencies, use the `requirements.txt` file:
+To install the required dependencies, use the `requirements.txt` file:
 
-```sh
+```bash
 pip install -r requirements.txt
 ```
 
 ## Project Structure
 
-- `data`: Contains the data used by the model.
-- `models`: Contains the machine learning models and encoders.
-- `notebooks`: Contains the notebooks used for data exploration and visualization.
-- `src`: Contains the main source code to collect and process data, train models and make predictions.
-- `tests`: Contains unit and integration tests to guarantee code stability.
+- **`data/`**: Contains zipped Lambda function and layer package files.
+- **`src/`**: Contains the main source code for deploying and managing the Lambda function, layer, and API Gateway.
+- **`tests/`**: Contains unit and integration tests to ensure code stability and functionality.
 
 ## Usage
 
-### Configure your AWS CLI
+This project employs CI/CD practices, automatically deploying updates to AWS whenever the Lambda function (`polarity.py`) is modified. If you prefer manual deployment, follow the steps below:
 
-Having [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), configure your credentials on a profile:
-```bash
-aws configure --profile mlops
-```
+### 1. Create ZIP Files
 
-To set it as default profile:
-
-Linux:
-```bash
-export AWS_PROFILE=mlops
-```
-
-Windows CMD:
-```bash
-set AWS_PROFILE=mlops
-```
-
-Windows PowerShell:
-```bash
-env:AWS_PROFILE = "mlops"
-```
-
-### Scripts pipeline
-
-To set up the project, run the following scripts in order:
+**Create the Lambda function ZIP file:**
 
 ```bash
-python src/create_function.py
-python src/create_layer.py
-python src/assign_layer.py
-python src/create_api_gateway.py
+zip data/polarity.zip polarity.py
 ```
 
-### Test
+**Create the Lambda layer package:**
 
-To test the deployed instances, run the following command:
+On Linux, from the project’s root folder:
 
 ```bash
-python tests/test.py
+mkdir -p layer/python/lib/python3.12/site-packages
+pip3 install textblob -t layer/python/lib/python3.12/site-packages
+cd layer
+zip -r ../data/polarity_layer_package.zip *
 ```
 
-# References
+### 2. Deployment Pipeline
 
-[Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+To manually deploy the project, run the following scripts in order:
+
+1. **Deploy the Lambda function:**
+   ```bash
+   python src/deploy/create_function.py data/polarity.zip get_polarity [update]
+   ```
+
+2. **Deploy the Lambda layer:**
+   ```bash
+   python src/deploy/create_layer.py data/polarity_layer_package.zip [update]
+   ```
+
+3. **Assign the layer to the Lambda function:**
+   ```bash
+   python src/deploy/assign_layer.py
+   ```
+
+4. **Create or update the API Gateway:**
+   ```bash
+   python src/deploy/create_api_gateway.py [route] [update]
+   ```
+
+### 3. Testing
+
+#### Local Testing
+
+To test the function locally, use:
+
+```bash
+pytest
+```
+
+#### Remote Testing
+
+After deploying the Lambda function and API Gateway, you can verify the setup by running:
+
+```bash
+pytest --local
+```
+
+The `--local` flag ensures that tests requiring local resources, such as environment variables, are executed.
+
+## References
+
+- [AWS Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+- [AWS Lambda Documentation](https://docs.aws.amazon.com/lambda/)
+- [AWS Lambda Layers Documentation](https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html)
+- [API Gateway Documentation](https://docs.aws.amazon.com/apigateway/)
+- [Pytest Documentation](https://docs.pytest.org/en/stable/)
