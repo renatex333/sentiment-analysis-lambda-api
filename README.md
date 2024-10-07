@@ -35,7 +35,7 @@ This project employs CI/CD practices, automatically deploying updates to AWS whe
 **Create the Lambda function ZIP file:**
 
 ```bash
-zip data/polarity.zip polarity.py
+zip -j data/polarity.zip src/polarity.py
 ```
 
 **Create the Lambda layer package:**
@@ -55,22 +55,22 @@ To manually deploy the project, run the following scripts in order:
 
 1. **Deploy the Lambda function:**
    ```bash
-   python src/deploy/create_function.py data/polarity.zip get_polarity [update]
+   python3 src/deploy/create_function.py data/polarity.zip get_polarity [update]
    ```
 
 2. **Deploy the Lambda layer:**
    ```bash
-   python src/deploy/create_layer.py data/polarity_layer_package.zip [update]
+   python3 src/deploy/create_layer.py data/polarity_layer_package.zip [update]
    ```
 
 3. **Assign the layer to the Lambda function:**
    ```bash
-   python src/deploy/assign_layer.py
+   python3 src/deploy/assign_layer.py
    ```
 
 4. **Create or update the API Gateway:**
    ```bash
-   python src/deploy/create_api_gateway.py [route] [update]
+   python3 src/deploy/create_api_gateway.py [route] [update]
    ```
 
 ### 3. Testing
