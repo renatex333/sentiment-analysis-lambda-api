@@ -1,12 +1,12 @@
-import boto3
 import os
-from dotenv import load_dotenv
+import boto3
+from dotenv import load_dotenv, unset_key
 
 def main():
     load_dotenv()
 
     # Provide layer name
-    layer_name = "layer_polarity_renatex"
+    layer_name = os.getenv("AWS_LAYER_NAME")
 
     # Create a Boto3 client for AWS Lambda
     lambda_client = boto3.client(
@@ -18,7 +18,6 @@ def main():
 
     # Fetch the layer version ARN based on the layer name
     response = lambda_client.list_layer_versions(
-        CompatibleRuntime="python3.10",  # Provide the compatible runtime of the layer
         LayerName=layer_name,
     )
 
@@ -27,13 +26,19 @@ def main():
 
         # Delete each layer version
         for version in layer_versions:
-            lambda_client.delete_layer_version(
-                LayerName=layer_name, VersionNumber=version["Version"]
-            )
+            try:
+                lambda_client.delete_layer_version(
+                    LayerName=layer_name, VersionNumber=version["Version"]
+                )
+            except lambda_client.exceptions.ResourceNotFoundException:
+                print("No existing layer found.")
 
         print(f"Deleted all versions of layer '{layer_name}'.")
     else:
         print(f"No layer with the name '{layer_name}' found.")
+
+    unset_key(".env", "LAYER_VERSION_ARN")
+    unset_key(".env", "LAYER_VERSION")
 
 if __name__ == "__main__":
     main()

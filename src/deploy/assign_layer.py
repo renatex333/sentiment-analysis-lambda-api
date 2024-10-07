@@ -9,7 +9,8 @@ def main():
     layer_version_arn = (
         os.getenv("LAYER_VERSION_ARN")
     )
-    function_name = "get_polarity_renatex"
+
+    function_name = os.getenv("AWS_LAMBDA_FUNCTION_NAME")
 
     # Create a Boto3 client for AWS Lambda
     lambda_client = boto3.client(
@@ -27,19 +28,24 @@ def main():
         response["Configuration"]["Layers"] if "Layers" in response["Configuration"] else []
     )
 
-    print("Existing layers:")
-    print(layers)
+    if layers:
+        print("Existing layers:")
+        for layer in layers:
+            print(layer)
+    else:
+        print("No existing layers found.")
 
     # Append the layer ARN to the existing layers
     layers.append(layer_version_arn)
 
     # Update the function configuration with the new layers
-    lambda_response = lambda_client.update_function_configuration(
-        FunctionName=function_name, Layers=layers
-    )
-
-    # Print response
-    print("Lambda response:\n", lambda_response)
+    try:
+        lambda_response = lambda_client.update_function_configuration(
+            FunctionName=function_name, Layers=layers
+        )
+        print("Updated function configuration successfully.")
+    except (lambda_client.exceptions.ResourceNotFoundException, lambda_client.exceptions.InvalidParameterValueException, Exception) as e:
+        print(f"Error updating function configuration: {e}")
 
 if __name__ == "__main__":
     main()

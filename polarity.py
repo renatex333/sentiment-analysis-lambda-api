@@ -7,7 +7,8 @@ from textblob import TextBlob
 
 def get_polarity(event, context):
     """
-    Handler function for the sentiment analysis lambda function
+    Handler function for the sentiment analysis lambda function.
+    Receives a sentence in the request body and returns the polarity and sentiment of the sentence.
     """
     if "body" not in event:
         return {
